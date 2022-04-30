@@ -5,6 +5,8 @@ from managers.query_engine_manager import QueryEngineManager
 from managers.query_manager import QueryManager, Query
 
 FAIL = "FAIL"
+
+
 class RuleManager:
     def __init__(self, query_manager: QueryManager, query_engine: QueryEngineManager):
         self.query_manager = query_manager

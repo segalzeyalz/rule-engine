@@ -9,10 +9,11 @@ class Config(object):
     USERID = os.getenv("USER_ID")
     PWD = os.getenv("PWD")
     _params = urllib.parse.quote_plus(
-        r'Driver={ODBC Driver 17 for SQL Server};Server=tcp:metisdb1.database.windows.net,1433;'
-        r'Database=ORM;Uid=<<UID>>@metisdb1;Pwd=<<PWD>>;'
-        r'Encrypt=yes;TrustServerCertificate=no;Connection Timeout=300;'
-            .replace("<<UID>>", USERID)
-            .replace("<<PWD>>", PWD))
+        'Driver={ODBC Driver 17 for SQL Server};Server=tcp:metisdb1.database.windows.net,1433;'
+        'Database=ORM;Uid=<user1>@metisdb1;Pwd=<password>;Encrypt=yes;'
+        'TrustServerCertificate=no;Connection Timeout=300;'
+        .replace('<user1>', USERID)
+        .replace('<password>', PWD)
+    )
     SQLALCHEMY_DATABASE_URI = 'mssql+pyodbc:///?odbc_connect={}'.format(_params)
     SQLALCHEMY_TRACK_MODIFICATIONS = False

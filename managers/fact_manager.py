@@ -22,14 +22,14 @@ class FactManager:
                 # TODO: the engine should get that data
                 # Todo: mention which table
                 if "Invalid object name" in str(e):
-                    fact_data["error"] = "this table is not exist"
+                    fact_data["Error"] = "this table is not exist"
                     logging.exception("this table is not exist")
                 else:
                     fact_data["Error"] = str(e)
                     logging.exception(str(e))
                 break
             except Exception as e:
-                fact_data["error"] = str(e)
+                fact_data["Error"] = str(e)
                 logging.exception(str(e))
                 break
 
