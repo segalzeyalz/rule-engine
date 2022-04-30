@@ -1,14 +1,22 @@
+from dataclasses import dataclass
+
 from sqlalchemy import text
 
 
-class QueryManger:
+@dataclass
+class Query:
+    name: str
+    query: any
+
+
+class QueryManager:
     def __init__(self, table_name: str):
         self.table_name = table_name
         self.queries = [
-            {"name": "number of rows", "query": self.number_of_rows(table_name)},
-            {"name": "number of indexes", "query": self.number_of_indexes(table_name)},
-            {"name": "has primary key", "query": self.has_primary_key(table_name)},
-            {"name": "primary key count columns", "query": self.primary_key_count_columns(table_name)}
+            Query(name="number of rows", query=self.number_of_rows(table_name)),
+            Query(name="number of indexes", query=self.number_of_indexes(table_name)),
+            Query(name="has primary key", query=self.has_primary_key(table_name)),
+            Query(name="primary key count columns", query=self.primary_key_count_columns(table_name))
         ]
 
     @staticmethod
@@ -43,7 +51,7 @@ class QueryManger:
         INNER JOIN sys.index_columns as INC
             ON IND.object_id = INC.object_id
             AND IND.index_id = INC.index_id
-    WHERE IND.object_id = object_id('<TableName>')
+    WHERE IND.object_id = object_id('{table_name}')
         AND IND.is_primary_key = 1;"""
         return text(query)
 

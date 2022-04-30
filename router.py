@@ -1,55 +1,40 @@
-from sqlalchemy.exc import ProgrammingError
+from flask import Blueprint, request, abort
+import logging
 
-from app import app
+from managers.fact_manager import FactManager
+from managers.query_manager_factory import QueryManagerFactory
+from managers.rule_manager import RuleManager
 
-from flask import request, jsonify
-from sqlalchemy import create_engine
-import urllib
-
-from query_manager import QueryManger
-
+routes = Blueprint(__name__, 'blueprint')
 
 
-@app.route('/facts', methods=['GET'])
+# TODO: Check in the route that the user's input is safe (YOU ARE TAKING IT AND EXC A QUERY ON DB - NOT SAFE!!!)
+@routes.route('/facts', methods=['GET'])
 def get_facts():
-    req_args = request.args
-    fact_data = {}
-    sql_queries = QueryManger(table_name=req_args["tableName"])
-    for sql_query in sql_queries:
-        query = sql_query.get("query")
-        query_name = sql_query.get("name")
-        try:
-            fact_data[query_name] = [res for res in azure_engine.execute(query)][0][0]
-        except ProgrammingError as e:
-            fact_data["error"] = str(e)
-            break
-    return fact_data
+    # avoid circular import
+    from app import query_engine_manager
+    logging.info(f"params are: {request.args}")
+    table_name = request.args.get("tableName")
+    if not table_name:
+        abort(400, "Table name was not supplied")
+        logging.exception("Table name wasn't supplied")
+    sql_queries = QueryManagerFactory.create(table_name)
+    fact_data = FactManager(sql_queries, query_engine_manager).retrieve_facts()
+    if fact_data.get("Error"):
+        # Todo: more specific rules
+        return fact_data, 404
+
+    return fact_data, 200
 
 
-@app.route('/rules', methods=['GET'])
+@routes.route('/rules', methods=['GET'])
 def get_rules():
-    req_args = request.args
-    table_name = req_args["tableName"]
-    sql_queries = QueryManger(table_name=table_name)
-    rules_status = {}
-    for query_item in sql_queries:
-        query_name = query_item.get("name")
-        query = query_item.get("query")
-        query_res = [res for res in azure_engine.execute(query)][0][0]
-        rule_name, message = "", "Passed"
-        if query_name == "number of rows":
-            rule_name = "high number of rows"
-            if query_res > 10000000:
-                message = f"Warning! Large table. The number of rows is {query_res}"
-        elif query_name == "has primary key":
-            rule_name = "no Primary Key"
-            if query_res == 'false':
-                message = "Warning: the table doesn’t have a PK."
-        elif query_name == "primary key count columns":
-            rule_name = "a Primary Key with many columns"
-            if query_res >= 4:
-                message = f"High number of columns in the PK: {query_res}"
-        if rule_name:
-            rules_status[rule_name] = message
-
-    return rules_status
+    # avoid circular import
+    from app import query_engine_manager
+    table_name = request.args["tableName"]
+    sql_queries = QueryManagerFactory.create(table_name)
+    rules_status = RuleManager(query_manager=sql_queries, query_engine=query_engine_manager).retrieve_rules()
+    if rules_status.get("Error"):
+        # Todo: more specific status codes per issue
+        return rules_status, 404
+    return rules_status, 200
